@@ -199,8 +199,9 @@ def get_calendar_service():
 
     return build('calendar', 'v3', credentials=creds)
 
-def create_calendar_event(person, topic, suggested_date):
-    """Create a calendar event for a meeting."""
+
+def create_calendar_event(person, topic, suggested_date, attendee_email=None):
+    """Create a calendar event for a meeting with optional attendees."""
     try:
         service = get_calendar_service()
         from datetime import datetime as dt, timedelta
@@ -218,6 +219,9 @@ def create_calendar_event(person, topic, suggested_date):
             except:
                 event_date = dt.now() + timedelta(days=7)
 
+        # Only use email if explicitly provided (from transcript)
+        resolved_email = attendee_email
+
         # Create event
         event = {
             'summary': f'Sync: {topic}' if topic else f'Meet with {person}',
@@ -231,11 +235,17 @@ def create_calendar_event(person, topic, suggested_date):
             'transparency': 'opaque',
         }
 
+        # Add attendee ONLY if email was explicitly provided in transcript
+        if resolved_email:
+            event['attendees'] = [
+                {'email': resolved_email, 'displayName': person}
+            ]
+
         created_event = service.events().insert(calendarId='primary', body=event).execute()
-        return created_event.get('htmlLink')
+        return created_event.get('htmlLink'), resolved_email
     except Exception as e:
         print(f"  ⚠️  Failed to create calendar event: {e}")
-        return None
+        return None, None
 
 def get_gmail_service():
     """Authenticate and get Gmail service."""
@@ -370,11 +380,18 @@ def save_results(transcript_id, transcript_title, extraction_output):
                 person = suggestion.get("person", "Unknown")
                 topic = suggestion.get("topic", "")
                 suggested_date = suggestion.get("suggested_date")
+                attendee_email = suggestion.get("email")  # Only use if explicitly in transcript
 
-                event_url = create_calendar_event(person, topic, suggested_date)
+                event_url, resolved_email = create_calendar_event(person, topic, suggested_date, attendee_email)
                 if event_url:
-                    print(f"  ✓ Meeting {i}: {person} - {topic}")
-                    print(f"    → {event_url}")
+                    if resolved_email:
+                        print(f"  ✓ Meeting {i}: {person} - {topic}")
+                        print(f"    Inviting: {resolved_email}")
+                        print(f"    → {event_url}")
+                    else:
+                        print(f"  ✓ Meeting {i}: {person} - {topic}")
+                        print(f"    (No email in transcript - create event without attendee)")
+                        print(f"    → {event_url}")
                 else:
                     print(f"  ✗ Meeting {i}: {person} (failed to create)")
         else:

@@ -45,7 +45,9 @@ Return a JSON object with this structure:
     {
       "name": "person's name",
       "role": "their role if mentioned",
-      "context": "what they were involved in"
+      "context": "what they were involved in",
+      "email": "email if mentioned in transcript, or null",
+      "should_invite": "true if they should be invited to follow-up meetings, false otherwise"
     }
   ],
   "calendar_items": [
@@ -62,6 +64,7 @@ Return a JSON object with this structure:
       "topic": "what the meeting should be about",
       "suggested_date": "ISO 8601 date or relative timeframe (e.g., 'next week') or null",
       "priority": "high | normal",
+      "email": "their email ONLY if explicitly mentioned in transcript, otherwise null",
       "context": "why this meeting was suggested in the transcript"
     }
   ],
@@ -92,9 +95,16 @@ Return a JSON object with this structure:
 - Body snippet: the core thing this person needs to know
 
 ### People Mentioned
-- Extract names and their roles/context
-- Only include people who had meaningful involvement in decisions
-- Skip generic mentions unless they're a stakeholder
+Extract names with:
+- **name**: Person's full name
+- **role**: Their role/title if mentioned
+- **context**: Their involvement in the meeting
+- **email**: ONLY if explicitly mentioned in transcript (e.g., "email Stuart at stuart@heitman.com" or "Stuart (stuart@company.com)"). DO NOT guess or infer emails. Leave as null if not explicitly stated.
+- **should_invite**: true if this person should be invited to follow-up meetings AND their email is explicitly stated in the transcript
+
+Only include people who had meaningful involvement in decisions. Skip generic mentions unless they're a stakeholder.
+
+IMPORTANT: Do not guess emails. Only use emails that are explicitly written in the transcript. If no email is mentioned, leave it null.
 
 ### Calendar Items & Meeting Suggestions
 Extract TWO types:
