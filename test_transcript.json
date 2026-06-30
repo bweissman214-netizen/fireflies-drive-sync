@@ -1,0 +1,110 @@
+{
+  "metadata": {
+    "title": "Q3 Product Roadmap Planning",
+    "date": "2026-06-30T14:00:00Z",
+    "duration_minutes": 45,
+    "attendees": ["Sarah Chen", "Marcus Thompson", "Elena Rodriguez", "James Park"]
+  },
+  "sentences": [
+    {
+      "speaker_id": 0,
+      "text": "Thanks everyone for joining. Let's kick off our Q3 product roadmap planning. We need to finalize priorities before the board meeting on July 15th.",
+      "start_time": 5
+    },
+    {
+      "speaker_id": 1,
+      "text": "Sarah, I've got the analytics dashboard done. We should push it to production by July 10th to give us time for user feedback before the board presentation.",
+      "start_time": 15
+    },
+    {
+      "speaker_id": 0,
+      "text": "Great, Marcus. Can you coordinate with Elena on the backend API changes needed for that? We'll need those done by July 8th.",
+      "start_time": 28
+    },
+    {
+      "speaker_id": 2,
+      "text": "I can do that. I'll need to pull in James from the infrastructure team. James, we're going to need Redis caching set up for the dashboard queries.",
+      "start_time": 38
+    },
+    {
+      "speaker_id": 3,
+      "text": "No problem. I'll schedule infrastructure work for July 6th. But I need to know exact specs by July 4th. Can you send me the requirements document?",
+      "start_time": 50
+    },
+    {
+      "speaker_id": 2,
+      "text": "Yes, I'll get that to you by end of day tomorrow, July 1st.",
+      "start_time": 62
+    },
+    {
+      "speaker_id": 0,
+      "text": "Perfect. Now, Marcus, I also want you to draft a summary document for the board about our Q3 achievements. That's due July 12th.",
+      "start_time": 72
+    },
+    {
+      "speaker_id": 1,
+      "text": "Got it. I'll coordinate with Elena to make sure we highlight the analytics work. Should we include performance metrics?",
+      "start_time": 85
+    },
+    {
+      "speaker_id": 0,
+      "text": "Definitely. Include adoption rates, feature usage, and any bugs we've fixed. Elena, can you pull those metrics from our dashboard?",
+      "start_time": 95
+    },
+    {
+      "speaker_id": 2,
+      "text": "I'll have those ready by July 10th so Marcus has time to incorporate them into the board summary.",
+      "start_time": 108
+    },
+    {
+      "speaker_id": 0,
+      "text": "Excellent. One more thing — we need to communicate this roadmap to the engineering team. James, can you run a technical deep-dive with the team on July 9th?",
+      "start_time": 120
+    },
+    {
+      "speaker_id": 3,
+      "text": "July 9th works for me. I'll prepare a technical overview of the infrastructure changes and share it in advance.",
+      "start_time": 133
+    },
+    {
+      "speaker_id": 0,
+      "text": "Great. And let's have a final review meeting just us four on July 13th to make sure everything is ready for the board on the 15th. I'm blocking our calendars now.",
+      "start_time": 145
+    },
+    {
+      "speaker_id": 1,
+      "text": "One concern — we might be tight on timeline for the analytics dashboard production release on July 10th. We should do a code review earlier, maybe by July 7th?",
+      "start_time": 160
+    },
+    {
+      "speaker_id": 0,
+      "text": "Good catch. Elena, can you review Marcus's analytics code by July 7th? Then Marcus, you'll need to make any requested changes by July 9th.",
+      "start_time": 173
+    },
+    {
+      "speaker_id": 2,
+      "text": "I can do the code review. I'll schedule it for July 7th morning. Marcus, send me the pull request by end of day July 6th.",
+      "start_time": 188
+    },
+    {
+      "speaker_id": 1,
+      "text": "Understood. I'll have the code ready by July 6th EOD.",
+      "start_time": 200
+    },
+    {
+      "speaker_id": 0,
+      "text": "Perfect. So to recap: Elena gets infrastructure specs by July 4th, Marcus delivers analytics code by July 6th, Elena reviews by July 7th, James sets up infrastructure by July 6th, metrics are ready by July 10th, and we have our final check-in on July 13th before the board meeting July 15th.",
+      "start_time": 208
+    },
+    {
+      "speaker_id": 3,
+      "text": "Just to confirm, Sarah — the board meeting is locked for July 15th at 10 AM?",
+      "start_time": 235
+    },
+    {
+      "speaker_id": 0,
+      "text": "Yes, 10 AM July 15th. I've already put calendar holds on everyone's calendars. This is our biggest presentation of the year, so let's make sure we nail it.",
+      "start_time": 245
+    }
+  ]
+}

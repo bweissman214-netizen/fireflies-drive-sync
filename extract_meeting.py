@@ -1,0 +1,420 @@
+#!/usr/bin/env python3
+"""
+Meeting Extraction Tool: Fetches Fireflies transcripts and extracts actionable insights via Claude.
+"""
+
+import json
+import sys
+from datetime import datetime
+import anthropic
+import requests
+import base64
+from google_auth_oauthlib.flow import InstalledAppFlow
+from googleapiclient.discovery import build
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+import os
+
+# Configuration
+FIREFLIES_API_KEY = "3c188f76-309b-4304-a0ea-f80794c52412"
+FIREFLIES_GRAPHQL_URL = "https://api.fireflies.ai/graphql"
+TODOIST_API_KEY = "0bc91dc73ed0490a3ac1c6175ec67fcea4c71869"
+TODOIST_GENERAL_PROJECT_ID = "6h2J724XVcM5gchf"
+
+# Load the extraction prompt
+EXTRACTION_PROMPT_FILE = "extraction_prompt.md"
+
+def fetch_fireflies_transcript(transcript_id):
+    """Fetch a specific transcript from Fireflies."""
+    query = """
+    query {
+      transcript(id: "%s") {
+        id
+        title
+        date
+        duration
+        sentences {
+          speaker_id
+          text
+          start_time
+        }
+      }
+    }
+    """ % transcript_id
+
+    response = requests.post(
+        FIREFLIES_GRAPHQL_URL,
+        json={"query": query},
+        headers={
+            "Authorization": f"Bearer {FIREFLIES_API_KEY}",
+            "Content-Type": "application/json"
+        }
+    )
+
+    data = response.json()
+    if "errors" in data:
+        print(f"Fireflies API error: {data['errors']}")
+        return None
+
+    return data.get("data", {}).get("transcript")
+
+def format_transcript_for_extraction(fireflies_transcript):
+    """Convert Fireflies format to our extraction input format."""
+    if not fireflies_transcript:
+        return None
+
+    # Convert epoch ms to ISO datetime
+    date_ms = fireflies_transcript.get("date", 0)
+    date_str = datetime.fromtimestamp(date_ms / 1000).isoformat() + "Z"
+
+    return {
+        "metadata": {
+            "title": fireflies_transcript.get("title", "Untitled"),
+            "date": date_str,
+            "duration_minutes": round(fireflies_transcript.get("duration", 0)),
+            "attendees": ["See speakers in sentences"]
+        },
+        "sentences": fireflies_transcript.get("sentences", [])
+    }
+
+def extract_with_claude(transcript_data):
+    """Send transcript to Claude for extraction."""
+
+    # Read the extraction prompt
+    try:
+        with open(EXTRACTION_PROMPT_FILE, "r") as f:
+            prompt_template = f.read()
+    except FileNotFoundError:
+        print(f"Error: {EXTRACTION_PROMPT_FILE} not found")
+        sys.exit(1)
+
+    # Insert transcript data into prompt
+    full_prompt = prompt_template.replace(
+        "[TRANSCRIPT WILL BE INSERTED HERE]",
+        f"```json\n{json.dumps(transcript_data, indent=2)}\n```"
+    )
+
+    # Call Claude API
+    client = anthropic.Anthropic()  # Uses ANTHROPIC_API_KEY env var
+
+    message = client.messages.create(
+        model="claude-haiku-4-5-20251001",
+        max_tokens=4096,
+        messages=[
+            {
+                "role": "user",
+                "content": full_prompt
+            }
+        ]
+    )
+
+    return message.content[0].text
+
+def parse_extraction_json(extraction_output):
+    """Extract and parse JSON from Claude's response."""
+    try:
+        # Handle markdown code block wrapping
+        json_start = extraction_output.find("{")
+        json_end = extraction_output.rfind("}") + 1
+
+        if json_start >= 0 and json_end > json_start:
+            json_str = extraction_output[json_start:json_end]
+            # Try to parse - if it fails, it might be due to unescaped quotes in strings
+            try:
+                return json.loads(json_str)
+            except json.JSONDecodeError as e:
+                print(f"  ⚠️  JSON parsing failed: {e}")
+                print(f"     Trying alternative parsing...")
+                # If normal parsing fails, try to clean up the string
+                return None
+        return None
+    except Exception as e:
+        print(f"  ⚠️  Error parsing: {e}")
+        return None
+
+def create_todoist_task(todo, transcript_id, transcript_title):
+    """Create a task in Todoist from an extracted todo."""
+    headers = {
+        "Authorization": f"Bearer {TODOIST_API_KEY}",
+        "Content-Type": "application/json"
+    }
+
+    # Build task description with context
+    description = f"From: {transcript_title}\n\nContext: {todo.get('context', 'N/A')}"
+    if todo.get('owner') and todo['owner'] != 'Unclear':
+        description = f"Owner: {todo['owner']}\n\n{description}"
+
+    task_data = {
+        "content": todo["action"],
+        "project_id": TODOIST_GENERAL_PROJECT_ID,
+        "description": description
+    }
+
+    # Add due date if specified
+    if todo.get("deadline") and todo["deadline"] != "Not specified":
+        task_data["due_date"] = todo["deadline"]
+
+    response = requests.post(
+        "https://api.todoist.com/api/v1/tasks",
+        json=task_data,
+        headers=headers
+    )
+
+    if response.status_code == 200:
+        task = response.json()
+        task_id = task["id"]
+        task_url = f"https://todoist.com/app/task/{task_id}"
+        return task_id, task_url
+    else:
+        print(f"  ⚠️  Failed to create task: {response.status_code}")
+        print(f"     Response: {response.text}")
+        return None, None
+
+def get_calendar_service():
+    """Authenticate and get Google Calendar service."""
+    from google.auth.transport.requests import Request
+    from google.oauth2.credentials import Credentials
+
+    SCOPES = ['https://www.googleapis.com/auth/calendar']
+    OAUTH_FILE = os.path.expanduser('~/gmail_oauth.json')
+    TOKEN_FILE = os.path.expanduser('~/.calendar_token.json')
+
+    creds = None
+
+    # Load existing token if it exists
+    if os.path.exists(TOKEN_FILE):
+        creds = Credentials.from_authorized_user_file(TOKEN_FILE, SCOPES)
+
+    # If no valid credentials, do OAuth flow
+    if not creds or not creds.valid:
+        if creds and creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+        else:
+            flow = InstalledAppFlow.from_client_secrets_file(OAUTH_FILE, SCOPES)
+            creds = flow.run_local_server(port=8080, open_browser=True)
+
+        # Save the token for next time
+        with open(TOKEN_FILE, 'w') as token:
+            token.write(creds.to_json())
+
+    return build('calendar', 'v3', credentials=creds)
+
+def create_calendar_event(person, topic, suggested_date):
+    """Create a calendar event for a meeting."""
+    try:
+        service = get_calendar_service()
+        from datetime import datetime as dt, timedelta
+
+        # Parse suggested date
+        if suggested_date is None or suggested_date == "null":
+            event_date = dt.now() + timedelta(days=7)  # Default to next week
+        elif suggested_date.lower() in ["next week", "asap", "soon"]:
+            event_date = dt.now() + timedelta(days=7)
+        elif suggested_date.lower() == "tomorrow":
+            event_date = dt.now() + timedelta(days=1)
+        else:
+            try:
+                event_date = dt.fromisoformat(suggested_date)
+            except:
+                event_date = dt.now() + timedelta(days=7)
+
+        # Create event
+        event = {
+            'summary': f'Sync: {topic}' if topic else f'Meet with {person}',
+            'description': f'Meeting with {person} to discuss: {topic}' if topic else f'Follow-up with {person}',
+            'start': {
+                'date': event_date.strftime('%Y-%m-%d'),
+            },
+            'end': {
+                'date': (event_date + timedelta(days=1)).strftime('%Y-%m-%d'),
+            },
+            'transparency': 'opaque',
+        }
+
+        created_event = service.events().insert(calendarId='primary', body=event).execute()
+        return created_event.get('htmlLink')
+    except Exception as e:
+        print(f"  ⚠️  Failed to create calendar event: {e}")
+        return None
+
+def get_gmail_service():
+    """Authenticate and get Gmail service."""
+    from google.auth.transport.requests import Request
+    from google.oauth2.credentials import Credentials
+
+    SCOPES = ['https://www.googleapis.com/auth/gmail.compose']
+    OAUTH_FILE = os.path.expanduser('~/gmail_oauth.json')
+    TOKEN_FILE = os.path.expanduser('~/.gmail_token.json')
+
+    creds = None
+
+    # Load existing token if it exists
+    if os.path.exists(TOKEN_FILE):
+        creds = Credentials.from_authorized_user_file(TOKEN_FILE, SCOPES)
+
+    # If no valid credentials, do OAuth flow
+    if not creds or not creds.valid:
+        if creds and creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+        else:
+            flow = InstalledAppFlow.from_client_secrets_file(OAUTH_FILE, SCOPES)
+            print("\n🔐 Opening browser for Gmail authorization...")
+            print("   If browser doesn't open, visit the URL shown in the terminal")
+            creds = flow.run_local_server(port=8080, open_browser=True)
+
+        # Save the token for next time
+        with open(TOKEN_FILE, 'w') as token:
+            token.write(creds.to_json())
+
+    return build('gmail', 'v1', credentials=creds)
+
+def create_gmail_draft(email_content, transcript_title):
+    """Create a Gmail draft from extracted email content."""
+    try:
+        service = get_gmail_service()
+
+        # Extract subject from content or use title
+        subject = transcript_title if "Meeting" in transcript_title else f"Meeting Summary: {transcript_title}"
+
+        # Convert markdown-style formatting to HTML
+        import re
+        body_text = email_content
+        body_text = re.sub(r'\*\*([^*]+)\*\*', r'<strong>\1</strong>', body_text)  # **bold** to <strong>
+        body_text = re.sub(r'\*([^*]+)\*', r'<em>\1</em>', body_text)  # *italic* to <em>
+
+        # Format body with proper line breaks and styling for Gmail
+        body_html = f"""
+<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; font-size: 14px; line-height: 1.6; color: #333;">
+{body_text.replace(chr(10), '<br>')}
+</div>
+"""
+
+        # Create MIME message
+        from email.mime.text import MIMEText
+        from email.mime.multipart import MIMEMultipart
+
+        msg = MIMEMultipart('alternative')
+        msg['To'] = 'bweissman214@gmail.com'
+        msg['Subject'] = subject
+        msg.attach(MIMEText(body_html, 'html'))
+
+        # Encode and create draft
+        raw_message = base64.urlsafe_b64encode(msg.as_bytes()).decode()
+        draft = service.users().drafts().create(
+            userId='me',
+            body={'message': {'raw': raw_message}}
+        ).execute()
+
+        draft_url = f"https://mail.google.com/mail/u/0/#drafts?compose={draft['id']}"
+        return draft_url
+    except Exception as e:
+        print(f"  ⚠️  Failed to create Gmail draft: {e}")
+        return None
+
+def save_results(transcript_id, transcript_title, extraction_output):
+    """Save extraction results to a JSON file and create Todoist tasks."""
+    timestamp = datetime.now().isoformat()
+
+    # Parse the extraction JSON
+    extraction_json = parse_extraction_json(extraction_output)
+
+    if not extraction_json:
+        extraction_json = {"raw_output": extraction_output}
+
+    # Save to file
+    filename = f"extraction_{transcript_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+    with open(filename, "w") as f:
+        json.dump({
+            "timestamp": timestamp,
+            "transcript_id": transcript_id,
+            "extraction": extraction_json
+        }, f, indent=2)
+
+    print(f"\n✅ Results saved to {filename}")
+
+    # Create Todoist tasks from todos
+    if extraction_json and "todos" in extraction_json:
+        todos = extraction_json["todos"]
+        if todos:
+            print(f"\n📝 Creating {len(todos)} todo(s) in Todoist...")
+            for i, todo in enumerate(todos, 1):
+                task_id, task_url = create_todoist_task(todo, transcript_id, transcript_title)
+                if task_id:
+                    print(f"  ✓ Task {i}: {todo['action']}")
+                    print(f"    → {task_url}")
+                else:
+                    print(f"  ✗ Task {i}: {todo['action']}")
+        else:
+            print("\nℹ️  No todos extracted from this meeting")
+
+    # Create Gmail draft from email_draft_ready
+    if extraction_json and "email_draft_ready" in extraction_json:
+        email_content = extraction_json["email_draft_ready"]
+        if email_content:
+            print(f"\n✉️  Creating Gmail draft...")
+            draft_url = create_gmail_draft(email_content, transcript_title)
+            if draft_url:
+                print(f"  ✓ Gmail draft created")
+                print(f"    → {draft_url}")
+            else:
+                print(f"  ✗ Failed to create Gmail draft (check permissions)")
+        else:
+            print("\nℹ️  No email draft generated")
+
+    # Create calendar events from meeting suggestions
+    if extraction_json and "meeting_suggestions" in extraction_json:
+        suggestions = extraction_json["meeting_suggestions"]
+        if suggestions:
+            print(f"\n📅 Creating calendar events ({len(suggestions)} meeting(s))...")
+            for i, suggestion in enumerate(suggestions, 1):
+                person = suggestion.get("person", "Unknown")
+                topic = suggestion.get("topic", "")
+                suggested_date = suggestion.get("suggested_date")
+
+                event_url = create_calendar_event(person, topic, suggested_date)
+                if event_url:
+                    print(f"  ✓ Meeting {i}: {person} - {topic}")
+                    print(f"    → {event_url}")
+                else:
+                    print(f"  ✗ Meeting {i}: {person} (failed to create)")
+        else:
+            print("\nℹ️  No meeting suggestions extracted")
+
+    return filename
+
+def main():
+    if len(sys.argv) < 2:
+        print("Usage: python extract_meeting.py <transcript_id>")
+        print("\nExample:")
+        print("  python extract_meeting.py 01KWCG8NRGKRYSYS4SDY9BZG98")
+        sys.exit(1)
+
+    transcript_id = sys.argv[1]
+
+    print(f"🔄 Fetching transcript {transcript_id} from Fireflies...")
+    fireflies_data = fetch_fireflies_transcript(transcript_id)
+
+    if not fireflies_data:
+        print("❌ Failed to fetch transcript")
+        sys.exit(1)
+
+    print(f"✓ Got transcript: {fireflies_data.get('title')}")
+
+    # Format for extraction
+    transcript_input = format_transcript_for_extraction(fireflies_data)
+
+    print("🤖 Running Claude extraction...")
+    extraction = extract_with_claude(transcript_input)
+
+    # Print the extraction
+    print("\n" + "="*60)
+    print("EXTRACTION OUTPUT:")
+    print("="*60)
+    print(extraction)
+
+    # Save results and create Todoist tasks
+    transcript_title = fireflies_data.get('title', 'Untitled Meeting')
+    save_results(transcript_id, transcript_title, extraction)
+
+if __name__ == "__main__":
+    main()
