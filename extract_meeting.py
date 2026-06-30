@@ -170,6 +170,77 @@ def create_todoist_task(todo, transcript_id, transcript_title):
         print(f"     Response: {response.text}")
         return None, None
 
+def get_drive_service():
+    """Authenticate and get Google Drive service."""
+    from google.auth.transport.requests import Request
+    from google.oauth2.credentials import Credentials
+
+    SCOPES = ['https://www.googleapis.com/auth/drive.file']  # Write access to Drive
+    OAUTH_FILE = os.path.expanduser('~/gmail_oauth.json')
+    TOKEN_FILE = os.path.expanduser('~/.drive_token.json')
+
+    creds = None
+
+    if os.path.exists(TOKEN_FILE):
+        creds = Credentials.from_authorized_user_file(TOKEN_FILE, SCOPES)
+
+    if not creds or not creds.valid:
+        if creds and creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+        else:
+            flow = InstalledAppFlow.from_client_secrets_file(OAUTH_FILE, SCOPES)
+            creds = flow.run_local_server(port=8080, open_browser=True)
+
+        with open(TOKEN_FILE, 'w') as token:
+            token.write(creds.to_json())
+
+    return build('drive', 'v3', credentials=creds)
+
+def find_file_in_drive(folder_path, search_term):
+    """Find a file in Google Drive by folder path and search term.
+
+    folder_path: e.g., "AI System/Zoom"
+    search_term: e.g., "bonobo"
+    """
+    try:
+        service = get_drive_service()
+
+        # Navigate folder path
+        folder_id = 'root'
+        for folder_name in folder_path.split('/'):
+            query = f"name='{folder_name}' and mimeType='application/vnd.google-apps.folder' and trashed=false and '{folder_id}' in parents"
+            results = service.files().list(q=query, spaces='drive', fields='files(id, name)', pageSize=1).execute()
+            files = results.get('files', [])
+            if not files:
+                print(f"  ✗ Folder '{folder_name}' not found")
+                return None
+            folder_id = files[0]['id']
+
+        # Search for file with search term
+        query = f"name contains '{search_term}' and trashed=false and '{folder_id}' in parents"
+        results = service.files().list(q=query, spaces='drive', fields='files(id, name)', pageSize=10).execute()
+        files = results.get('files', [])
+
+        if files:
+            return files[0]['id'], files[0]['name']
+        else:
+            print(f"  ✗ No file found with '{search_term}' in {folder_path}")
+            return None
+    except Exception as e:
+        print(f"  ✗ Error searching Drive: {e}")
+        return None
+
+def read_file_from_drive(file_id):
+    """Read text content from a Google Drive file."""
+    try:
+        service = get_drive_service()
+        request = service.files().get_media(fileId=file_id)
+        content = request.execute()
+        return content.decode('utf-8') if isinstance(content, bytes) else content
+    except Exception as e:
+        print(f"  ✗ Error reading file from Drive: {e}")
+        return None
+
 def get_calendar_service():
     """Authenticate and get Google Calendar service."""
     from google.auth.transport.requests import Request
