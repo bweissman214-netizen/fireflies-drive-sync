@@ -518,7 +518,6 @@ def save_results(transcript_id, transcript_title, extraction_output, fireflies_d
             f.write(f"DATE:          {date_obj.strftime('%B %d, %Y')}\n")
             f.write(f"TIME:          {date_obj.strftime('%I:%M %p')}\n")
             f.write(f"DURATION:      {fireflies_data.get('duration', 0):.1f} minutes\n")
-            f.write(f"TRANSCRIPT ID: {transcript_id}\n")
             f.write(f"\n{'─' * 70}\n\n")
 
             # Executive Summary
@@ -532,12 +531,8 @@ def save_results(transcript_id, transcript_title, extraction_output, fireflies_d
                     f.write("KEY TOPICS:\n")
                     for theme in themes[:3]:  # First 3 themes
                         theme_name = theme.get("theme", "")
-                        sentiment = theme.get("sentiment", "")
                         if theme_name:
-                            f.write(f"  • {theme_name}")
-                            if sentiment:
-                                f.write(f" ({sentiment})")
-                            f.write("\n")
+                            f.write(f"  • {theme_name}\n")
                     f.write("\n")
 
                 # Extract action items
@@ -549,11 +544,14 @@ def save_results(transcript_id, transcript_title, extraction_output, fireflies_d
                         owner = todo.get("owner", "")
                         deadline = todo.get("deadline", "")
                         if action:
-                            f.write(f"  • {action}")
-                            if owner and owner != "Unclear":
-                                f.write(f" (Owner: {owner})")
+                            # Format with due date prominently if available
                             if deadline and deadline != "Not specified":
-                                f.write(f" [Due: {deadline}]")
+                                f.write(f"  • [{deadline}] {action}")
+                            else:
+                                f.write(f"  • {action}")
+
+                            if owner and owner != "Unclear":
+                                f.write(f" — {owner}")
                             f.write("\n")
                     f.write("\n")
 
