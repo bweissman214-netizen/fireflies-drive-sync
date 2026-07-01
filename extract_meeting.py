@@ -509,25 +509,35 @@ def save_results(transcript_id, transcript_title, extraction_output, fireflies_d
         with open(transcript_filename, "w") as f:
             date_obj = datetime.fromtimestamp(fireflies_data.get('date', 0)/1000)
 
-            f.write(f"{transcript_title}\n")
-            f.write("=" * 70 + "\n\n")
-            f.write(f"Date:          {date_obj.strftime('%B %d, %Y at %I:%M %p')}\n")
-            f.write(f"Duration:      {fireflies_data.get('duration', 0):.1f} minutes\n")
-            f.write(f"Transcript ID: {transcript_id}\n")
-            f.write("\n" + "=" * 70 + "\n\n")
+            # Header with clean formatting
+            f.write(f"\n{'*' * 70}\n")
+            f.write(f"*  {transcript_title.upper()}\n")
+            f.write(f"{'*' * 70}\n\n")
+
+            # Meeting metadata
+            f.write(f"DATE:          {date_obj.strftime('%B %d, %Y')}\n")
+            f.write(f"TIME:          {date_obj.strftime('%I:%M %p')}\n")
+            f.write(f"DURATION:      {fireflies_data.get('duration', 0):.1f} minutes\n")
+            f.write(f"TRANSCRIPT ID: {transcript_id}\n")
+            f.write(f"\n{'─' * 70}\n\n")
 
             current_speaker = None
             for sentence in fireflies_data["sentences"]:
-                speaker = sentence.get("speaker_id", "Unknown")
+                speaker = str(sentence.get("speaker_id", "Unknown"))
                 text = sentence.get("text", "")
 
                 if speaker != current_speaker:
                     if current_speaker is not None:
                         f.write("\n")
-                    f.write(f"{speaker}:\n")
+                    speaker_label = f"SPEAKER {speaker}" if speaker.isdigit() else speaker
+                    f.write(f"\n>>> {speaker_label.upper()} <<<\n\n")
                     current_speaker = speaker
 
-                f.write(f"  {text}\n")
+                f.write(f"{text}\n")
+
+            f.write(f"\n{'─' * 70}\n")
+            f.write(f"END OF TRANSCRIPT\n")
+            f.write(f"{'─' * 70}\n")
 
         print(f"✅ Transcript saved to {transcript_filename}")
 
