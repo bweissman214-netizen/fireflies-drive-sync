@@ -522,23 +522,24 @@ def save_results(transcript_id, transcript_title, extraction_output, fireflies_d
 
             # Executive Summary
             if extraction_json and ("project_themes" in extraction_json or "todos" in extraction_json or "email_draft_ready" in extraction_json):
-                f.write("EXECUTIVE SUMMARY\n")
-                f.write("─" * 70 + "\n\n")
+                f.write("╔" + "═" * 68 + "╗\n")
+                f.write("║  EXECUTIVE SUMMARY\n")
+                f.write("╚" + "═" * 68 + "╝\n\n")
 
                 # Extract key themes
                 themes = extraction_json.get("project_themes", [])
                 if themes:
-                    f.write("KEY TOPICS:\n")
+                    f.write(">>> KEY TOPICS <<<\n\n")
                     for theme in themes[:3]:  # First 3 themes
                         theme_name = theme.get("theme", "")
                         if theme_name:
-                            f.write(f"  • {theme_name}\n")
+                            f.write(f"  ★ {theme_name.upper()}\n")
                     f.write("\n")
 
                 # Extract action items
                 todos = extraction_json.get("todos", [])
                 if todos:
-                    f.write("ACTION ITEMS:\n")
+                    f.write(">>> ACTION ITEMS <<<\n\n")
                     for todo in todos[:5]:  # First 5 todos
                         action = todo.get("action", "")
                         owner = todo.get("owner", "")
@@ -546,14 +547,13 @@ def save_results(transcript_id, transcript_title, extraction_output, fireflies_d
                         if action:
                             # Format with due date prominently if available
                             if deadline and deadline != "Not specified":
-                                f.write(f"  • [{deadline}] {action}")
+                                f.write(f"  ✓ [{deadline}] {action.upper()}\n")
                             else:
-                                f.write(f"  • {action}")
+                                f.write(f"  ✓ {action.upper()}\n")
 
                             if owner and owner != "Unclear":
-                                f.write(f" — {owner}")
+                                f.write(f"      └─ Owner: {owner}\n")
                             f.write("\n")
-                    f.write("\n")
 
                 # Extract key points from email draft
                 if extraction_json.get("email_draft_ready"):
@@ -562,7 +562,7 @@ def save_results(transcript_id, transcript_title, extraction_output, fireflies_d
                     lines = [l.strip() for l in email_text.split('\n') if l.strip() and not l.startswith('**')]
                     if lines:
                         summary_line = next((l for l in lines if len(l) > 20), lines[0])
-                        f.write(f"OVERVIEW: {summary_line[:150]}\n")
+                        f.write(f">>> OVERVIEW <<<\n{summary_line[:150]}\n")
 
                 f.write(f"\n{'─' * 70}\n\n")
 
@@ -592,15 +592,15 @@ def save_results(transcript_id, transcript_title, extraction_output, fireflies_d
                     f.write(f"\n>>> {speaker_label.upper()} <<<\n\n")
                     current_speaker = speaker
 
-                # Bold key concepts in the text
-                bolded_text = text
+                # Highlight key concepts in the text with visual emphasis
+                highlighted_text = text
                 for concept in key_concepts:
                     # Case-insensitive replacement with word boundaries
                     import re
                     pattern = r'\b' + re.escape(concept) + r'\b'
-                    bolded_text = re.sub(pattern, f"**{concept}**", bolded_text, flags=re.IGNORECASE)
+                    highlighted_text = re.sub(pattern, f"▸{concept.upper()}▸", highlighted_text, flags=re.IGNORECASE)
 
-                f.write(f"{bolded_text}\n")
+                f.write(f"{highlighted_text}\n")
 
             f.write(f"\n{'─' * 70}\n")
             f.write(f"END OF TRANSCRIPT\n")
