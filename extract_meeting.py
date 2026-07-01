@@ -507,11 +507,14 @@ def save_results(transcript_id, transcript_title, extraction_output, fireflies_d
     if fireflies_data and "sentences" in fireflies_data:
         transcript_filename = f"{filename_base}.md"
         with open(transcript_filename, "w") as f:
-            f.write(f"# {transcript_title}\n\n")
-            f.write(f"**Date:** {datetime.fromtimestamp(fireflies_data.get('date', 0)/1000).isoformat()}\n")
-            f.write(f"**Duration:** {fireflies_data.get('duration', 0):.1f} minutes\n")
-            f.write(f"**Transcript ID:** {transcript_id}\n\n")
-            f.write("---\n\n")
+            date_obj = datetime.fromtimestamp(fireflies_data.get('date', 0)/1000)
+
+            f.write(f"{transcript_title}\n")
+            f.write("=" * 70 + "\n\n")
+            f.write(f"Date:          {date_obj.strftime('%B %d, %Y at %I:%M %p')}\n")
+            f.write(f"Duration:      {fireflies_data.get('duration', 0):.1f} minutes\n")
+            f.write(f"Transcript ID: {transcript_id}\n")
+            f.write("\n" + "=" * 70 + "\n\n")
 
             current_speaker = None
             for sentence in fireflies_data["sentences"]:
@@ -521,10 +524,10 @@ def save_results(transcript_id, transcript_title, extraction_output, fireflies_d
                 if speaker != current_speaker:
                     if current_speaker is not None:
                         f.write("\n")
-                    f.write(f"**{speaker}:**\n")
+                    f.write(f"{speaker}:\n")
                     current_speaker = speaker
 
-                f.write(f"{text} ")
+                f.write(f"  {text}\n")
 
         print(f"✅ Transcript saved to {transcript_filename}")
 
@@ -582,7 +585,7 @@ def save_results(transcript_id, transcript_title, extraction_output, fireflies_d
         else:
             print("\nℹ️  No meeting suggestions extracted")
 
-    return filename
+    return filename_base
 
 def main():
     if len(sys.argv) < 2:
