@@ -459,23 +459,31 @@ def create_gmail_draft(email_content, transcript_title):
         return None
 
 def get_file_naming(fireflies_data, extraction_json):
-    """Generate semantic filename from transcript title and date (not speaker names)."""
+    """Generate semantic filename from extracted topic and date (not speaker names)."""
     # Get date from Fireflies data
     date_ms = fireflies_data.get('date', 0)
     date_str = datetime.fromtimestamp(date_ms / 1000).strftime('%Y-%m-%d')
 
-    # Use meeting title from Fireflies as the primary identifier
-    title = fireflies_data.get('title', 'Meeting')
+    # Try to get the primary topic from extraction first
+    topic = None
+    if extraction_json and "project_themes" in extraction_json:
+        themes = extraction_json.get("project_themes", [])
+        if themes and len(themes) > 0:
+            topic = themes[0].get("theme", "")
 
-    # Clean up title: remove special chars but keep alphanumeric, spaces, and hyphens
-    safe_title = "".join(c if c.isalnum() or c in " -&" else "" for c in title).strip()
+    # Fallback to Fireflies title if no extracted topic
+    if not topic:
+        topic = fireflies_data.get('title', 'Meeting')
 
-    # Fallback to generic name if title is empty or just special chars
-    if not safe_title:
-        safe_title = "Meeting"
+    # Clean up topic: remove special chars but keep alphanumeric, spaces, and hyphens
+    safe_topic = "".join(c if c.isalnum() or c in " -&" else "" for c in topic).strip()
 
-    # Format: [Topic/Title] - [YYYY-MM-DD]
-    filename_base = f"{safe_title} - {date_str}"
+    # Final fallback to generic name
+    if not safe_topic:
+        safe_topic = "Meeting"
+
+    # Format: [Topic] - [YYYY-MM-DD]
+    filename_base = f"{safe_topic} - {date_str}"
 
     return filename_base
 
