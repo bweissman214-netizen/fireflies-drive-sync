@@ -526,21 +526,21 @@ def save_results(transcript_id, transcript_title, extraction_output, fireflies_d
                 f.write("║  EXECUTIVE SUMMARY\n")
                 f.write("╚" + "═" * 68 + "╝\n\n")
 
-                # Extract key themes
+                # Extract key themes (all of them)
                 themes = extraction_json.get("project_themes", [])
                 if themes:
                     f.write(">>> KEY TOPICS <<<\n\n")
-                    for theme in themes[:3]:  # First 3 themes
+                    for theme in themes:
                         theme_name = theme.get("theme", "")
                         if theme_name:
                             f.write(f"  ★ {theme_name.upper()}\n")
                     f.write("\n")
 
-                # Extract action items
+                # Extract action items (all of them, not limited)
                 todos = extraction_json.get("todos", [])
                 if todos:
                     f.write(">>> ACTION ITEMS <<<\n\n")
-                    for todo in todos[:5]:  # First 5 todos
+                    for todo in todos:
                         action = todo.get("action", "")
                         owner = todo.get("owner", "")
                         deadline = todo.get("deadline", "")
