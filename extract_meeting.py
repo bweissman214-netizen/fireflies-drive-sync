@@ -18,7 +18,7 @@ import os
 # Configuration
 FIREFLIES_API_KEY = "3c188f76-309b-4304-a0ea-f80794c52412"
 FIREFLIES_GRAPHQL_URL = "https://api.fireflies.ai/graphql"
-TODOIST_API_KEY = "0bc91dc73ed0490a3ac1c6175ec67fcea4c71869"
+TODOIST_API_KEY = "b6c1629c971c0518d154fccae61f150433214985"
 TODOIST_GENERAL_PROJECT_ID = "6h2J724XVcM5gchf"
 
 # Load the extraction prompt
@@ -109,6 +109,13 @@ def extract_with_claude(transcript_data):
     )
 
     return message.content[0].text
+
+def generate_filename(title, date_str):
+    """Generate semantic filename from meeting title and date."""
+    # Format: "Meeting Title - YYYY-MM-DD"
+    # Remove any special characters that could cause filesystem issues
+    safe_title = "".join(c if c.isalnum() or c in " -&" else "" for c in title).strip()
+    return f"{safe_title} - {date_str}"
 
 def parse_extraction_json(extraction_output):
     """Extract and parse JSON from Claude's response."""
@@ -349,6 +356,65 @@ def get_gmail_service():
 
     return build('gmail', 'v1', credentials=creds)
 
+def send_todos_for_review(todos, transcript_title, extraction_json):
+    """Send extracted todos via email for review."""
+    try:
+        service = get_gmail_service()
+
+        # Build email body
+        todos_html = "<ul style='line-height: 1.8;'>"
+        for i, todo in enumerate(todos, 1):
+            owner = todo.get('owner', 'Unclear')
+            deadline = todo.get('deadline', 'Not specified')
+            context = todo.get('context', '')
+
+            todos_html += f"""
+            <li style='margin-bottom: 15px; padding: 10px; background: #f5f5f5; border-left: 3px solid #4285f4;'>
+                <strong>{i}. {todo['action']}</strong><br/>
+                <small>Owner: {owner} | Deadline: {deadline}</small><br/>
+                <em style='color: #666;'>{context}</em>
+            </li>
+            """
+        todos_html += "</ul>"
+
+        subject = f"📝 Review Todos: {transcript_title}"
+
+        body_html = f"""
+<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; font-size: 14px; color: #333; line-height: 1.6;">
+    <h2>Todo Review for: {transcript_title}</h2>
+
+    <p>The following todos were extracted from the meeting. Please review and approve before adding to Todoist.</p>
+
+    <h3>Extracted Todos ({len(todos)})</h3>
+    {todos_html}
+
+    <hr style='margin: 20px 0; border: none; border-top: 1px solid #ddd;'/>
+
+    <p style='color: #666; font-size: 12px;'>
+        <strong>Next steps:</strong> Review the todos above. Once approved, you can manually add them to Todoist or reply to this email with any changes.
+    </p>
+</div>
+"""
+
+        # Create MIME message
+        msg = MIMEMultipart('alternative')
+        msg['To'] = 'bweissman214@gmail.com'
+        msg['Subject'] = subject
+        msg.attach(MIMEText(body_html, 'html'))
+
+        # Encode and create draft
+        raw_message = base64.urlsafe_b64encode(msg.as_bytes()).decode()
+        draft = service.users().drafts().create(
+            userId='me',
+            body={'message': {'raw': raw_message}}
+        ).execute()
+
+        draft_url = f"https://mail.google.com/mail/u/0/#drafts?compose={draft['id']}"
+        return draft_url
+    except Exception as e:
+        print(f"  ⚠️  Failed to send review email: {e}")
+        return None
+
 def create_gmail_draft(email_content, transcript_title):
     """Create a Gmail draft from extracted email content."""
     try:
@@ -392,8 +458,29 @@ def create_gmail_draft(email_content, transcript_title):
         print(f"  ⚠️  Failed to create Gmail draft: {e}")
         return None
 
-def save_results(transcript_id, transcript_title, extraction_output):
-    """Save extraction results to a JSON file and create Todoist tasks."""
+def get_file_naming(fireflies_data, extraction_json):
+    """Generate semantic filename from transcript title and date (not speaker names)."""
+    # Get date from Fireflies data
+    date_ms = fireflies_data.get('date', 0)
+    date_str = datetime.fromtimestamp(date_ms / 1000).strftime('%Y-%m-%d')
+
+    # Use meeting title from Fireflies as the primary identifier
+    title = fireflies_data.get('title', 'Meeting')
+
+    # Clean up title: remove special chars but keep alphanumeric, spaces, and hyphens
+    safe_title = "".join(c if c.isalnum() or c in " -&" else "" for c in title).strip()
+
+    # Fallback to generic name if title is empty or just special chars
+    if not safe_title:
+        safe_title = "Meeting"
+
+    # Format: [Topic/Title] - [YYYY-MM-DD]
+    filename_base = f"{safe_title} - {date_str}"
+
+    return filename_base
+
+def save_results(transcript_id, transcript_title, extraction_output, fireflies_data=None):
+    """Save extraction results AND raw transcript to files and create Todoist tasks."""
     timestamp = datetime.now().isoformat()
 
     # Parse the extraction JSON
@@ -402,29 +489,56 @@ def save_results(transcript_id, transcript_title, extraction_output):
     if not extraction_json:
         extraction_json = {"raw_output": extraction_output}
 
-    # Save to file
-    filename = f"extraction_{transcript_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-    with open(filename, "w") as f:
+    # Generate semantic filename
+    filename_base = get_file_naming(fireflies_data, extraction_json)
+
+    # Save extraction to JSON file
+    extraction_filename = f"{filename_base}.json"
+    with open(extraction_filename, "w") as f:
         json.dump({
             "timestamp": timestamp,
             "transcript_id": transcript_id,
             "extraction": extraction_json
         }, f, indent=2)
 
-    print(f"\n✅ Results saved to {filename}")
+    print(f"\n✅ Extraction saved to {extraction_filename}")
 
-    # Create Todoist tasks from todos
+    # Save raw transcript to file
+    if fireflies_data and "sentences" in fireflies_data:
+        transcript_filename = f"{filename_base}.md"
+        with open(transcript_filename, "w") as f:
+            f.write(f"# {transcript_title}\n\n")
+            f.write(f"**Date:** {datetime.fromtimestamp(fireflies_data.get('date', 0)/1000).isoformat()}\n")
+            f.write(f"**Duration:** {fireflies_data.get('duration', 0):.1f} minutes\n")
+            f.write(f"**Transcript ID:** {transcript_id}\n\n")
+            f.write("---\n\n")
+
+            current_speaker = None
+            for sentence in fireflies_data["sentences"]:
+                speaker = sentence.get("speaker_id", "Unknown")
+                text = sentence.get("text", "")
+
+                if speaker != current_speaker:
+                    if current_speaker is not None:
+                        f.write("\n")
+                    f.write(f"**{speaker}:**\n")
+                    current_speaker = speaker
+
+                f.write(f"{text} ")
+
+        print(f"✅ Transcript saved to {transcript_filename}")
+
+    # Send todos via email for review
     if extraction_json and "todos" in extraction_json:
         todos = extraction_json["todos"]
         if todos:
-            print(f"\n📝 Creating {len(todos)} todo(s) in Todoist...")
-            for i, todo in enumerate(todos, 1):
-                task_id, task_url = create_todoist_task(todo, transcript_id, transcript_title)
-                if task_id:
-                    print(f"  ✓ Task {i}: {todo['action']}")
-                    print(f"    → {task_url}")
-                else:
-                    print(f"  ✗ Task {i}: {todo['action']}")
+            print(f"\n📝 Sending {len(todos)} todo(s) for email review...")
+            email_url = send_todos_for_review(todos, transcript_title, extraction_json)
+            if email_url:
+                print(f"  ✓ Review email sent")
+                print(f"    → {email_url}")
+            else:
+                print(f"  ⚠️  Failed to send review email")
         else:
             print("\nℹ️  No todos extracted from this meeting")
 
@@ -502,7 +616,7 @@ def main():
 
     # Save results and create Todoist tasks
     transcript_title = fireflies_data.get('title', 'Untitled Meeting')
-    save_results(transcript_id, transcript_title, extraction)
+    save_results(transcript_id, transcript_title, extraction, fireflies_data)
 
 if __name__ == "__main__":
     main()
