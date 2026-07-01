@@ -1,0 +1,23 @@
+{
+  "timestamp": "2026-07-01T14:39:51.596526",
+  "transcript_id": "01KWFF4P6E54NNSJVK8XQFFQM4",
+  "extraction": {
+    "todos": [],
+    "email_drafts": [],
+    "people_mentioned": [],
+    "calendar_items": [],
+    "meeting_suggestions": [],
+    "project_themes": [
+      {
+        "theme": "AI Transcription Service Selection",
+        "key_points": [
+          "Evaluating Fireflies as transcription service",
+          "Using this meeting as test example",
+          "Decision to move away from Granola"
+        ],
+        "sentiment": "neutral"
+      }
+    ],
+    "email_draft_ready": "**Subject: Transcription Service Change \u2014 Testing Fireflies**\n\nHi,\n\nWe're moving forward with **Fireflies** as our AI note-taking and transcription service. This meeting serves as our test example to evaluate the platform.\n\n**Key Decision**\n- Switching from Granola to Fireflies for transcription services\n\n**Next Steps**\nWe'll use today's session to assess Fireflies' performance and features before full rollout.\n\nThanks,\nSpeaker 0"
+  }
+}

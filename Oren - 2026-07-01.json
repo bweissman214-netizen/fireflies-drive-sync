@@ -1,0 +1,229 @@
+{
+  "timestamp": "2026-07-01T15:12:18.437501",
+  "transcript_id": "01KWAEWTTM1BMZ9AHQRN8E5Y53",
+  "extraction": {
+    "todos": [
+      {
+        "action": "Send office email address to Oren to create WordPress admin account for Zekhon Naftali",
+        "owner": "Speaker 0",
+        "deadline": "Not specified",
+        "context": "Need admin access to manage the Zekhon Naftali WordPress site with Elementor and payment plugin"
+      },
+      {
+        "action": "Build Charlie Harari learning/podcast homepage in Lovable",
+        "owner": "Speaker 0",
+        "deadline": "Not specified",
+        "context": "Need centralized hub for all Charlie's content (podcasts, videos, series) with podcast feed embedded and category links"
+      },
+      {
+        "action": "Connect Charlie Harari podcast site to domain and set up back-end integration",
+        "owner": "Speaker 2 (Temima)",
+        "deadline": "Not specified",
+        "context": "After Speaker 0 builds Lovable layout, Temima will handle domain connection, RSS feed integration, and technical setup"
+      },
+      {
+        "action": "Set up donation notification system for Zekhon Naftali - integrate CRM with webhook",
+        "owner": "Speaker 2 (Temima)",
+        "deadline": "Not specified",
+        "context": "Currently no notifications when donations received; need to route webhook from Authorize.net payment processor through Make to GetFRM CRM and send email notifications"
+      },
+      {
+        "action": "Investigate GetFRM CRM API capabilities for webhook integration",
+        "owner": "Speaker 2 (Temima)",
+        "deadline": "Not specified",
+        "context": "CRM developer confirmed webhook support; need to set up connection to receive donation data and send notifications"
+      },
+      {
+        "action": "Get Authorize.net login credentials from Oren",
+        "owner": "Speaker 0",
+        "deadline": "Not specified",
+        "context": "Needed to establish direct connection between payment processor and GetFRM CRM for donation tracking"
+      },
+      {
+        "action": "Contact girl in Israel to potentially take over tech responsibilities during Temima's 3-month absence",
+        "owner": "Speaker 2 (Temima)",
+        "deadline": "Not specified",
+        "context": "Temima will be out before Rosh Hashanah; need backup person who can handle WordPress, Elementor, Mailerlite, and quick page builds"
+      },
+      {
+        "action": "Set up own web hosting account (Hostinger) and transfer Zekhon Naftali, Justdofive, and potentially Shabbat sites from Oren's account",
+        "owner": "Speaker 0",
+        "deadline": "Not specified",
+        "context": "Currently hosted on Oren's hosting plan; need to own the infrastructure for sites we operate"
+      },
+      {
+        "action": "Get GoDaddy login or clarify domain ownership for Zekhon Naftali",
+        "owner": "Speaker 0",
+        "deadline": "Not specified",
+        "context": "Domain hosting unclear; need to confirm if on Oren's GoDaddy or elsewhere and transfer to our ownership"
+      },
+      {
+        "action": "Reconnect Coleus Sof Mosha domain to Mailerlite in Charlie Harari account",
+        "owner": "Speaker 2 (Temima)",
+        "deadline": "Not specified",
+        "context": "Domain is currently down after canceling separate Mailerlite account; need to update domain DNS records at Namecheap to point to new account"
+      }
+    ],
+    "email_drafts": [
+      {
+        "recipient": "Oren",
+        "subject_line": "Next Steps: WordPress Access & Hosting Transfer for Zekhon Naftali",
+        "body_snippet": "We'd like to add our office email as an admin user to the Zekhon Naftali WordPress site, and we should discuss transitioning the hosting from your Hostinger account to our own account to streamline operations."
+      },
+      {
+        "recipient": "GetFRM CRM Developer (Chaim)",
+        "subject_line": "Integration Request: Authorize.net Webhook Connection for Donation Tracking",
+        "body_snippet": "We need to connect our Authorize.net payment processor to your CRM via webhook so we automatically receive donor information and can send notifications when donations come in."
+      },
+      {
+        "recipient": "Team",
+        "subject_line": "Temima's Summer Absence - Backup Support Arranged",
+        "body_snippet": "Temima will be unavailable for approximately 3 months starting before Rosh Hashanah. We're arranging backup technical support to cover WordPress, page builds, and email management during this period."
+      }
+    ],
+    "people_mentioned": [
+      {
+        "name": "Oren",
+        "role": "Web Developer",
+        "context": "Built Zekhon Naftali WordPress site with Elementor and custom payment plugin; hosts multiple sites on Hostinger; will create admin accounts and discuss hosting transfer",
+        "email": null,
+        "should_invite": false
+      },
+      {
+        "name": "Temima",
+        "role": "Technical Project Manager/Developer",
+        "context": "Coordinating website projects, managing CRM integration, handling domain connections, will cover back-end technical work; will be out 3 months before Rosh Hashanah",
+        "email": "commonStrategy.net",
+        "should_invite": true
+      },
+      {
+        "name": "Charlie",
+        "role": "Content Creator/Organization Leader",
+        "context": "Creates content for multiple initiatives; prefers AI-based solutions; recently requested podcast page consolidation and video hosting improvements",
+        "email": null,
+        "should_invite": false
+      },
+      {
+        "name": "Chaim",
+        "role": "GetFRM CRM Developer",
+        "context": "Built and maintains custom CRM (GetFRM) for donation tracking; confirmed webhook capabilities for Authorize.net integration",
+        "email": null,
+        "should_invite": false
+      },
+      {
+        "name": "Blake",
+        "role": "Summer Intern / AI Developer",
+        "context": "Has strong AI background; works with Charlie building AI agents; should be involved in ecosystem to learn operations",
+        "email": null,
+        "should_invite": false
+      },
+      {
+        "name": "Dylan",
+        "role": "Team Member",
+        "context": "Available but not tech-savvy; can send emails but unable to take on technical responsibilities",
+        "email": null,
+        "should_invite": false
+      }
+    ],
+    "calendar_items": [
+      {
+        "event": "Temima unavailable",
+        "date": null,
+        "time": null,
+        "context": "Approximately 3 months starting before Rosh Hashanah; backup support needed during this period"
+      },
+      {
+        "event": "Rosh Hashanah",
+        "date": null,
+        "time": null,
+        "context": "Temima will not be available starting about a week and a half before Rosh Hashanah through about 3 months after"
+      }
+    ],
+    "meeting_suggestions": [
+      {
+        "person": "Oren",
+        "topic": "Hosting transfer and domain ownership clarification for Zekhon Naftali, Justdofive, and Shabbat sites",
+        "suggested_date": "Soon",
+        "priority": "high",
+        "email": null,
+        "context": "Need to move sites from Oren's hosting to organization's own hosting account; clarify GoDaddy domain ownership"
+      },
+      {
+        "person": "Chaim (GetFRM CRM Developer)",
+        "topic": "Set up webhook integration with Authorize.net for automatic donation tracking and notifications",
+        "suggested_date": "Soon",
+        "priority": "high",
+        "email": null,
+        "context": "Critical for donor management; currently no way to track who has donated or receive notifications"
+      },
+      {
+        "person": "Girl in Israel (technical support backup)",
+        "topic": "Discuss taking over technical responsibilities during Temima's 3-month absence",
+        "suggested_date": "Before Rosh Hashanah",
+        "priority": "high",
+        "email": null,
+        "context": "Need reliable backup for WordPress, Elementor, quick page builds, and email management"
+      },
+      {
+        "person": "Charlie",
+        "topic": "Finalize specifications for Charlie Harari learning/podcast hub page - layout, categories, and content organization",
+        "suggested_date": "Soon",
+        "priority": "normal",
+        "email": null,
+        "context": "Need to confirm vision for centralized content hub before full build; discuss podcast feed vs. individual episode organization"
+      }
+    ],
+    "project_themes": [
+      {
+        "theme": "Website Infrastructure & Ownership",
+        "key_points": [
+          "Currently hosting multiple sites on Oren's Hostinger account - need to transition to organization's own hosting",
+          "Domain ownership unclear for some sites (GoDaddy vs. Namecheap vs. elsewhere)",
+          "Zekhon Naftali site successfully rebuilt in WordPress/Elementor with functional payment plugin"
+        ],
+        "sentiment": "neutral"
+      },
+      {
+        "theme": "Donation Management & CRM Integration",
+        "key_points": [
+          "Currently no notification system when donations received - critical gap",
+          "GetFRM CRM exists but not connected to payment processor",
+          "Need webhook from Authorize.net \u2192 Make \u2192 GetFRM \u2192 Email notifications",
+          "Organization lacks visibility into donor information and donation patterns"
+        ],
+        "sentiment": "negative"
+      },
+      {
+        "theme": "Content Consolidation & Charlie's Learning Hub",
+        "key_points": [
+          "Multiple content scattered across different platforms (Torah anytime, various podcasts, old series)",
+          "Need single centralized hub (charlieharari.com or similar) for all content",
+          "Podcast feed from Jewish Podcast FM should be embedded with category/tag filtering",
+          "Should include links to related content (Pesach, Shabbat series, etc.)"
+        ],
+        "sentiment": "positive"
+      },
+      {
+        "theme": "Team Capacity & Summer Planning",
+        "key_points": [
+          "Temima unavailable ~3 months starting before Rosh Hashanah",
+          "Need backup technical support person identified and trained",
+          "Projects should be prioritized knowing team capacity constraints",
+          "Blake (intern) available but needs to learn system and processes"
+        ],
+        "sentiment": "neutral"
+      },
+      {
+        "theme": "Technology Choices: WordPress vs. Lovable vs. Custom",
+        "key_points": [
+          "WordPress (via Hostinger) = easy to edit, drag-and-drop with Elementor, good for rapid changes",
+          "Lovable = fast to prototype, but hard to edit after deployment without re-prompting AI, credit-based costs",
+          "Should use Lovable for rapid prototyping, then migrate to WordPress or self-hosted for long-term use",
+          "Charlie prefers AI-based solutions; WordPress provides better ongoing editability"
+        ],
+        "sentiment": "neutral"
+      }
+    ],
+    "email_draft_ready": "**Subject: Meeting Recap - Infrastructure, CRM Integration, & Content Hub Planning**\n\n---\n\n**Opening:**\nGreat discussion with Oren and Temima today about consolidating our digital infrastructure, fixing our donor management gap, and building a centralized hub for Charlie's expanding content.\n\n**Key Decisions:**\n1. **WordPress Site Live** \u2013 Zekhon Naftali site successfully rebuilt on WordPress/Elementor with functional Authorize.net payment plugin; admin access coming soon\n2. **Own Our Infrastructure** \u2013 Will set up Hostinger account to migrate Zekhon Naftali, Justdofive, and potentially Shabbat sites from Oren's hosting\n3. **Fix Donation Tracking** \u2013 Will integrate GetFRM CRM with Authorize.net via webhook (through Make) to notify on donations and track donors\n4. **Build Charlie Hub** \u2013 Creating centralized podcast/content site in Lovable, then migrating to permanent host\n\n**Action Items:**\n1. **Speaker 0** \u2013 Send office email to Oren for WordPress admin account + discuss hosting transfer & GoDaddy access \u2014 Due: ASAP\n2. **Speaker 0** \u2013 Build Charlie Harari podcast/learning homepage in Lovable (layout & design) \u2014 Due: Next 2 weeks\n3. **Speaker 2 (Temima)** \u2013 Get GetFRM CRM login + Authorize.net credentials from Oren + set up webhook integration \u2014 Due: Next week\n4. **Speaker 2 (Temima)** \u2013 Connect Lovable site to domain, set up RSS feed embedding, handle back-end \u2014 Due: After Lovable build complete\n5. **Speaker 2 (Temima)** \u2013 Contact backup tech person in Israel re: covering responsibilities during 3-month absence (before Rosh Hashanah) \u2014 Due: This week\n6. **Speaker 0** \u2013 Clarify ownership/hosting status of other sites (Hoshen Mishpat, Kenyan Academy) before taking action\n\n**Key Dates:**\n- Temima unavailable ~3 months starting ~1 week before Rosh Hashanah\n- Podcast page should launch before then if possible\n- Charlie may announce new initiatives anytime (requires fast turnaround)\n\n**Next Steps:**\nTemima will coordinate with Oren on hosting/domain transfer and GetFRM integration. Speaker 0 to build Lovable prototype and secure necessary credentials. All systems should be in place before Temima's departure."
+  }
+}
