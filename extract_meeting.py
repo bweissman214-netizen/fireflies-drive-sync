@@ -504,7 +504,7 @@ def save_results(transcript_id, transcript_title, extraction_output, fireflies_d
     print(f"\n✅ Extraction saved to {extraction_filename}")
 
     # Save raw transcript to file
-    if fireflies_data and "sentences" in fireflies_data:
+    if fireflies_data and "sentences" in fireflies_data and fireflies_data["sentences"]:
         transcript_filename = f"{filename_base}.md"
         with open(transcript_filename, "w") as f:
             date_obj = datetime.fromtimestamp(fireflies_data.get('date', 0)/1000)
