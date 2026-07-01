@@ -521,6 +521,67 @@ def save_results(transcript_id, transcript_title, extraction_output, fireflies_d
             f.write(f"TRANSCRIPT ID: {transcript_id}\n")
             f.write(f"\n{'─' * 70}\n\n")
 
+            # Executive Summary
+            if extraction_json and ("project_themes" in extraction_json or "todos" in extraction_json or "email_draft_ready" in extraction_json):
+                f.write("EXECUTIVE SUMMARY\n")
+                f.write("─" * 70 + "\n\n")
+
+                # Extract key themes
+                themes = extraction_json.get("project_themes", [])
+                if themes:
+                    f.write("KEY TOPICS:\n")
+                    for theme in themes[:3]:  # First 3 themes
+                        theme_name = theme.get("theme", "")
+                        sentiment = theme.get("sentiment", "")
+                        if theme_name:
+                            f.write(f"  • {theme_name}")
+                            if sentiment:
+                                f.write(f" ({sentiment})")
+                            f.write("\n")
+                    f.write("\n")
+
+                # Extract action items
+                todos = extraction_json.get("todos", [])
+                if todos:
+                    f.write("ACTION ITEMS:\n")
+                    for todo in todos[:5]:  # First 5 todos
+                        action = todo.get("action", "")
+                        owner = todo.get("owner", "")
+                        deadline = todo.get("deadline", "")
+                        if action:
+                            f.write(f"  • {action}")
+                            if owner and owner != "Unclear":
+                                f.write(f" (Owner: {owner})")
+                            if deadline and deadline != "Not specified":
+                                f.write(f" [Due: {deadline}]")
+                            f.write("\n")
+                    f.write("\n")
+
+                # Extract key points from email draft
+                if extraction_json.get("email_draft_ready"):
+                    email_text = extraction_json["email_draft_ready"]
+                    # Extract first meaningful sentence or line
+                    lines = [l.strip() for l in email_text.split('\n') if l.strip() and not l.startswith('**')]
+                    if lines:
+                        summary_line = next((l for l in lines if len(l) > 20), lines[0])
+                        f.write(f"OVERVIEW: {summary_line[:150]}\n")
+
+                f.write(f"\n{'─' * 70}\n\n")
+
+            # Extract key concepts for bolding
+            key_concepts = set()
+            if extraction_json:
+                # Get themes
+                for theme in extraction_json.get("project_themes", []):
+                    if theme.get("theme"):
+                        key_concepts.add(theme["theme"])
+                # Get people mentioned
+                for person in extraction_json.get("people_mentioned", []):
+                    if isinstance(person, dict) and person.get("name"):
+                        key_concepts.add(person["name"])
+                    elif isinstance(person, str):
+                        key_concepts.add(person)
+
             current_speaker = None
             for sentence in fireflies_data["sentences"]:
                 speaker = str(sentence.get("speaker_id", "Unknown"))
@@ -533,7 +594,15 @@ def save_results(transcript_id, transcript_title, extraction_output, fireflies_d
                     f.write(f"\n>>> {speaker_label.upper()} <<<\n\n")
                     current_speaker = speaker
 
-                f.write(f"{text}\n")
+                # Bold key concepts in the text
+                bolded_text = text
+                for concept in key_concepts:
+                    # Case-insensitive replacement with word boundaries
+                    import re
+                    pattern = r'\b' + re.escape(concept) + r'\b'
+                    bolded_text = re.sub(pattern, f"**{concept}**", bolded_text, flags=re.IGNORECASE)
+
+                f.write(f"{bolded_text}\n")
 
             f.write(f"\n{'─' * 70}\n")
             f.write(f"END OF TRANSCRIPT\n")
